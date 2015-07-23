@@ -1,0 +1,80 @@
+#!/usr/bin/env python3.4
+
+import sys
+import os
+
+_APP_PATH = \
+    os.path.join(os.path.dirname(__file__), '..', '..', '..')
+
+sys.path.insert(0, os.path.abspath(_APP_PATH))
+
+import logging
+import argparse
+
+import pf.config.log
+import pf.manifest
+
+_LOGGER = logging.getLogger(__name__)
+
+def _parse_args():
+    description = "Check the given path for changes since the manifest was written."
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument(
+        'root_path',
+        help='Root path')
+
+    parser.add_argument(
+        '-mf', '--manifest-filename',
+        help='Manifest filename')
+
+    parser.add_argument(
+        '-e', '--exclude-rel-path',
+        action='append',
+        dest='excluded_rel_paths',
+        help="Ignore the contents of this child path")
+
+    args = parser.parse_args()
+
+    return args
+
+def _print_files(heading, rel_filepaths):
+    print(heading)
+    print('-' * len(heading))
+
+    for rel_filepath in rel_filepaths:
+        print(rel_filepath)
+
+    print('')
+
+def _main():
+    args = _parse_args()
+
+    root_path = args.root_path
+    manifest_filename = args.manifest_filename
+    excluded_rel_paths = args.excluded_rel_paths or []
+
+    m = pf.manifest.Manifest(
+            root_path, 
+            manifest_filename=manifest_filename, 
+            excluded_rel_paths=excluded_rel_paths)
+
+    try:
+        result = m.compare()
+    except pf.manifest.NoChangedFilesException:
+        print("No files have been changed.")
+        print('')
+    else:
+        (created, updated, removed) = result
+
+        if created:
+            _print_files('New', created.keys())
+
+        if updated:
+            _print_files('Updated', updated.keys())
+
+        if removed:
+            _print_files('Removed', removed.keys())
+
+if __name__ == '__main__':
+    pf.config.log.configure_log()
+    _main()
