@@ -8,9 +8,9 @@ import subprocess
 import datetime
 import pprint
 
-import pf.config
-import pf.config.patch
-import pf.utility
+import pm.config
+import pm.config.patch
+import pm.utility
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class Manifest(object):
             raise ValueError("Root-path does not exist: [{0}]".\
                              format(root_rel_path))
 
-        manifest_filename = pf.config.patch.DEFAULT_MANIFEST_FILENAME
+        manifest_filename = pm.config.patch.DEFAULT_MANIFEST_FILENAME
 
         self.__root_path = os.path.abspath(root_path)
         self.__manifest_filename = manifest_filename
@@ -169,7 +169,7 @@ class Manifest(object):
     def __write_patch_info(self, patch_name, patch_files, temp_path):
         now_phrase = \
             datetime.datetime.now().strftime(
-                pf.config.patch.TIMESTAMP_FORMAT)
+                pm.config.patch.TIMESTAMP_FORMAT)
 
         patch_info = {
             'patch_name': patch_name,
@@ -184,13 +184,13 @@ class Manifest(object):
         }
 
         patch_info_filename = \
-            pf.config.patch.PATCH_INFO_FILENAME_TEMPLATE % replacements
+            pm.config.patch.PATCH_INFO_FILENAME_TEMPLATE % replacements
 
         patch_info_filepath = \
             os.path.join(temp_path, patch_info_filename)
 
         with open(patch_info_filepath, 'w') as f:
-            pf.utility.pretty_json_dump(patch_info, f)
+            pm.utility.pretty_json_dump(patch_info, f)
 
     def __build_archive(self, patch_name, patch_output_path, temp_path):
         # Build the archive.
@@ -200,7 +200,7 @@ class Manifest(object):
         }
 
         patch_filename = \
-            pf.config.patch.PATCH_FILENAME_TEMPLATE % replacements
+            pm.config.patch.PATCH_FILENAME_TEMPLATE % replacements
 
         patch_filepath = os.path.join(patch_output_path, patch_filename)
 
@@ -232,7 +232,7 @@ class Manifest(object):
         if not changed_rel_filepaths:
             raise NoChangedFilesException()
 
-        if pf.config.IS_DEBUG is True:
+        if pm.config.IS_DEBUG is True:
             _LOGGER.debug("Files to capture in the patch:\n%s", 
                           pprint.pformat(changed_rel_filepaths))
 
@@ -245,7 +245,7 @@ class Manifest(object):
             patch_filepath = \
                 self.__build_archive(patch_name, patch_output_path, temp_path)
         finally:
-            if pf.config.IS_DEBUG is False:
+            if pm.config.IS_DEBUG is False:
                 shutil.rmtree(temp_path)
             else:
                 _LOGGER.warning("Not removing temp-path since we're running "

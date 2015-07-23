@@ -1,11 +1,11 @@
 import logging
 
-import pf.config
+import pm.config
 
 def configure_log():
     logger = logging.getLogger()
     
-    if pf.config.IS_DEBUG is True:
+    if pm.config.IS_DEBUG is True:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)

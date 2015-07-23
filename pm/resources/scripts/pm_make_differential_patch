@@ -12,8 +12,8 @@ import logging
 import argparse
 import re
 
-import pf.config.log
-import pf.manifest
+import pm.config.log
+import pm.manifest
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,13 +61,13 @@ def _main():
     patch_output_path = args.output_path
     do_print_json = args.json
 
-    if re.match(pf.config.patch.NAME_RX, patch_name) is None:
+    if re.match(pm.config.patch.NAME_RX, patch_name) is None:
         print("The patch-name can only have numbers, letters, and "
               "underscores.")
 
         sys.exit(1)
 
-    m = pf.manifest.Manifest(
+    m = pm.manifest.Manifest(
             root_path, 
             manifest_filename=manifest_filename, 
             excluded_rel_paths=excluded_rel_paths)
@@ -76,7 +76,7 @@ def _main():
 
     try:
         patch_filepath = m.make_patch(patch_name, patch_output_path)
-    except pf.manifest.NoChangedFilesException:
+    except pm.manifest.NoChangedFilesException:
         if do_print_json is True:
             result = {
                 'found_changes': False,
@@ -95,10 +95,10 @@ def _main():
             print(patch_filepath)
 
     if do_print_json is True:
-        print(pf.utility.pretty_json_dumps(result))
+        print(pm.utility.pretty_json_dumps(result))
     else:
         print('')
 
 if __name__ == '__main__':
-    pf.config.log.configure_log()
+    pm.config.log.configure_log()
     _main()
