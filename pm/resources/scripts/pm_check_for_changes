@@ -33,6 +33,17 @@ def _parse_args():
         dest='excluded_rel_paths',
         help="Ignore the contents of this child path")
 
+    parser.add_argument(
+        '-i', '--include-rel-path',
+        action='append',
+        dest='included_rel_paths',
+        help="Constraint the matched files to one or more directories")
+
+    parser.add_argument(
+        '-ir', '--ignore-removed',
+        action='store_true',
+        help="Do not show removed files (helpful when we include specific subdirectories)")
+
     args = parser.parse_args()
 
     return args
@@ -52,11 +63,14 @@ def _main():
     root_path = args.root_path
     manifest_filename = args.manifest_filename
     excluded_rel_paths = args.excluded_rel_paths or []
+    included_rel_paths = args.included_rel_paths or []
+    ignore_removed = args.ignore_removed
 
     m = pm.manifest.Manifest(
             root_path, 
             manifest_filename=manifest_filename, 
-            excluded_rel_paths=excluded_rel_paths)
+            excluded_rel_paths=excluded_rel_paths,
+            included_rel_paths=included_rel_paths)
 
     try:
         result = m.compare()
@@ -72,7 +86,7 @@ def _main():
         if updated:
             _print_files('Updated', updated.keys())
 
-        if removed:
+        if removed and ignore_removed is False:
             _print_files('Removed', removed.keys())
 
 if __name__ == '__main__':

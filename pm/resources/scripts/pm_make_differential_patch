@@ -43,6 +43,12 @@ def _parse_args():
         help="Ignore the contents of this child path")
 
     parser.add_argument(
+        '-i', '--include-rel-path',
+        action='append',
+        dest='included_rel_paths',
+        help="Constraint the matched files to one or more directories")
+
+    parser.add_argument(
         '-j', '--json',
         action='store_true',
         help="Print result in JSON")
@@ -57,6 +63,7 @@ def _main():
     root_path = args.root_path
     manifest_filename = args.manifest_filename
     excluded_rel_paths = args.excluded_rel_paths or []
+    included_rel_paths = args.included_rel_paths or []
     patch_name = args.patch_name
     patch_output_path = args.output_path
     do_print_json = args.json
@@ -70,7 +77,8 @@ def _main():
     m = pm.manifest.Manifest(
             root_path, 
             manifest_filename=manifest_filename, 
-            excluded_rel_paths=excluded_rel_paths)
+            excluded_rel_paths=excluded_rel_paths,
+            included_rel_paths=included_rel_paths)
 
     result = None
 

@@ -1,3 +1,5 @@
 /pm/__pycache__
 /path_manifest.egg-info
-/.manifest.csv
+/.manifest.csv.bz2
+/dist
+/build

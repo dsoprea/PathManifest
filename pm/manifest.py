@@ -7,6 +7,7 @@ import json
 import subprocess
 import datetime
 import pprint
+import bz2
 
 import pm.config
 import pm.config.patch
@@ -21,7 +22,7 @@ class NoChangedFilesException(Exception):
 
 class Manifest(object):
     def __init__(self, root_path, manifest_filename=None, 
-                 excluded_rel_paths=[]):
+                 excluded_rel_paths=[], included_rel_paths=[]):
         if os.path.exists(root_path) is False:
             raise ValueError("Root-path does not exist: [{0}]".\
                              format(root_rel_path))
@@ -30,7 +31,8 @@ class Manifest(object):
 
         self.__root_path = os.path.abspath(root_path)
         self.__manifest_filename = manifest_filename
-        self.__excluded_rel_paths = excluded_rel_paths
+        self.__excluded_rel_paths_s = set(excluded_rel_paths)
+        self.__included_rel_paths = included_rel_paths
 
     def file_gen(self):
         # Make sure all of the paths exist and that the excluded-paths are 
@@ -43,53 +45,106 @@ class Manifest(object):
 
         for (path, child_dirs, child_filenames) in os.walk(self.__root_path):
             skip_children = []
+            do_process_files = True
             for child_dir in child_dirs:
-                child_dir_filepath = os.path.join(path, child_dir)
-                child_dir_rel_filepath = child_dir_filepath[prefix_len:]
+                child_dir_path = os.path.join(path, child_dir)
+                child_dir_rel_path = child_dir_path[prefix_len:]
 
+                do_definite_include = False
                 do_skip = False
-                for excluded_rel_path in self.__excluded_rel_paths:
-                    if child_dir_rel_filepath.startswith(excluded_rel_path):
-                        do_skip = True
-                        break
+                if self.__included_rel_paths:
+                    for included_rel_path in self.__included_rel_paths:
+                        # The current child path matches an included path 
+                        # exactly.
+                        is_included = child_dir_rel_path == included_rel_path
 
+                        # This current child path starts with an include path
+                        # (include it).
+                        child_starts_with_include_path = \
+                            child_dir_rel_path.startswith(
+                                included_rel_path + os.sep)
+
+                        # This included path starts with the current child path
+                        # (the included path is a descendant of the current
+                        # directory).
+                        included_path_starts_with_child = \
+                            included_rel_path.startswith(
+                                child_dir_rel_path + os.sep)
+
+                        if is_included is True or \
+                           child_starts_with_include_path is True or \
+                           included_path_starts_with_child is True:
+                            
+                            if included_path_starts_with_child is True:
+                                do_process_files = False
+
+                            do_definite_include = True
+                            break
+
+#                    print('')
+
+                    # We were given a list of inclusions but the current 
+                    # directory didn't qualify.
+                    if do_definite_include is False:
+                        do_skip = True
+
+                # We either weren't given inclusions or the current directory 
+                # matches an inclusion.
+                if do_skip is False:
+                    do_skip = child_dir_rel_path in self.__excluded_rel_paths_s
+
+                # The current directory failed either the inclusions or the 
+                # exclusions.
                 if do_skip is True:
                     skip_children.append(child_dir)
 
             for skip_child in skip_children:
                 child_dirs.remove(skip_child)
 
-            for child_filename in child_filenames:
-                child_filepath = os.path.join(path, child_filename)
-                mtime_epoch = os.stat(child_filepath).st_mtime
+            if do_process_files is True:
+                for child_filename in child_filenames:
+                    child_filepath = os.path.join(path, child_filename)
+                    mtime_epoch = os.stat(child_filepath).st_mtime
 
-                rel_filepath = child_filepath[prefix_len:]
+                    rel_filepath = child_filepath[prefix_len:]
 
-                if rel_filepath == self.__manifest_filename:
-                    _LOGGER.debug("Excluding manifest from file-list: [{0}]".\
-                                  format(rel_filepath))
+                    if rel_filepath == self.__manifest_filename:
+                        _LOGGER.debug("Excluding manifest from file-list: [{0}]".\
+                                      format(rel_filepath))
 
-                    continue
+                        continue
 
-                yield (rel_filepath, int(mtime_epoch))
+                    yield (rel_filepath, int(mtime_epoch))
 
     def manifest_gen(self):
         manifest_filepath = \
             os.path.join(self.__root_path, self.__manifest_filename)
 
-        with open(manifest_filepath) as f:
+        # Force it to "write-text" (it defaults to binary despite the 
+        # documentation).
+        with bz2.open(manifest_filepath, 'rt') as f:
             cr = csv.reader(f)
             for filepath, mtime_epoch_phrase in cr:
                 yield filepath, int(mtime_epoch_phrase)
 
-    def write_manifest(self):
+    def write_manifest(self, force=False):
         manifest_filepath = \
             os.path.join(self.__root_path, self.__manifest_filename)
 
-        with open(manifest_filepath, 'w') as f:
+        if os.path.exists(manifest_filepath) is True and force is False:
+            raise EnvironmentError("Manifest already exists: [{0}]".\
+                                   format(manifest_filepath))
+
+        # Force it to "write-text" (it defaults to binary despite the 
+        # documentation).
+        with bz2.open(manifest_filepath, 'wt') as f:
             cr = csv.writer(f)
+            i = 0
             for filepath, mtime_epoch_phrase in self.file_gen():
                 cr.writerow([filepath, str(mtime_epoch_phrase)])
+                i += 1
+
+        _LOGGER.debug("(%d) entries written.", i)
 
     def build_manifest_set(self):
         catalog_s = set()

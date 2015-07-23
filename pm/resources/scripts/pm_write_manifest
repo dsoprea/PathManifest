@@ -24,6 +24,11 @@ def _parse_args():
         help='Root path')
 
     parser.add_argument(
+        '-f', '--force',
+        action='store_true',
+        help="Force the replacement of an existing manifest")
+
+    parser.add_argument(
         '-mf', '--manifest-filename',
         help='Manifest filename')
 
@@ -32,6 +37,12 @@ def _parse_args():
         action='append',
         dest='excluded_rel_paths',
         help="Ignore the contents of this child path")
+
+    parser.add_argument(
+        '-i', '--include-rel-path',
+        action='append',
+        dest='included_rel_paths',
+        help="Constraint the matched files to one or more directories")
 
     args = parser.parse_args()
 
@@ -43,13 +54,16 @@ def _main():
     root_path = args.root_path
     manifest_filename = args.manifest_filename
     excluded_rel_paths = args.excluded_rel_paths or []
+    included_rel_paths = args.included_rel_paths or []
+    do_force = args.force
 
     m = pm.manifest.Manifest(
             root_path, 
             manifest_filename=manifest_filename, 
-            excluded_rel_paths=excluded_rel_paths)
+            excluded_rel_paths=excluded_rel_paths,
+            included_rel_paths=included_rel_paths)
 
-    m.write_manifest()
+    m.write_manifest(force=do_force)
 
 if __name__ == '__main__':
     pm.config.log.configure_log()
