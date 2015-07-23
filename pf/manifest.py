@@ -10,6 +10,7 @@ import pprint
 
 import pf.config
 import pf.config.patch
+import pf.utility
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -140,8 +141,8 @@ class Manifest(object):
             from_filepath = os.path.join(self.__root_path, rel_filepath)
             to_filepath = os.path.join(temp_path, rel_filepath)
 
-            _LOGGER.info("Copying file to patch path: [%s] => [%s]", 
-                         from_filepath, to_filepath)
+            _LOGGER.debug("Copying file to patch path: [%s] => [%s]", 
+                          from_filepath, to_filepath)
 
             to_path = os.path.dirname(to_filepath)
             if os.path.exists(to_path) is False:
@@ -189,7 +190,7 @@ class Manifest(object):
             os.path.join(temp_path, patch_info_filename)
 
         with open(patch_info_filepath, 'w') as f:
-            self.__pretty_json_dump(patch_info, f)
+            pf.utility.pretty_json_dump(patch_info, f)
 
     def __build_archive(self, patch_name, patch_output_path, temp_path):
         # Build the archive.
@@ -209,7 +210,7 @@ class Manifest(object):
             os.chdir(temp_path)
 
             cmd = ['tar', 'cjf', patch_filepath, '.']
-            _LOGGER.info("Building archive: [%s]", cmd)
+            _LOGGER.debug("Building archive: [%s]", cmd)
 
             p = subprocess.Popen(cmd)
             if p.wait() != 0:
@@ -218,16 +219,6 @@ class Manifest(object):
             os.chdir(current_wd)
 
         return patch_filepath
-
-    def __pretty_json_dump(self, data, f):
-        json.dump(
-            data,
-            f,
-            sort_keys=True,
-            indent=4, 
-            separators=(',', ': '))
-
-        f.write("\n")
 
     def make_patch(self, patch_name, patch_output_path):
         temp_path = tempfile.mkdtemp()

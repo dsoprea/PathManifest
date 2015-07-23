@@ -42,6 +42,11 @@ def _parse_args():
         dest='excluded_rel_paths',
         help="Ignore the contents of this child path")
 
+    parser.add_argument(
+        '-j', '--json',
+        action='store_true',
+        help="Print result in JSON")
+
     args = parser.parse_args()
 
     return args
@@ -54,6 +59,7 @@ def _main():
     excluded_rel_paths = args.excluded_rel_paths or []
     patch_name = args.patch_name
     patch_output_path = args.output_path
+    do_print_json = args.json
 
     if re.match(pf.config.patch.NAME_RX, patch_name) is None:
         print("The patch-name can only have numbers, letters, and "
@@ -66,17 +72,32 @@ def _main():
             manifest_filename=manifest_filename, 
             excluded_rel_paths=excluded_rel_paths)
 
+    result = None
+
     try:
-        patch_filepath = \
-            m.make_patch(patch_name, patch_output_path)
-
-        print("Patch file-path:")
-        print('')
-        print(patch_filepath)
+        patch_filepath = m.make_patch(patch_name, patch_output_path)
     except pf.manifest.NoChangedFilesException:
-        print("No files have been changed.")
+        if do_print_json is True:
+            result = {
+                'found_changes': False,
+            }
+        else:
+            print("No files have been changed.")
+    else:
+        if do_print_json is True:
+            result = {
+                'found_changes': True,
+                'patch_filepath': patch_filepath,
+            }
+        else:
+            print("Patch file-path:")
+            print('')
+            print(patch_filepath)
 
-    print('')
+    if do_print_json is True:
+        print(pf.utility.pretty_json_dumps(result))
+    else:
+        print('')
 
 if __name__ == '__main__':
     pf.config.log.configure_log()
