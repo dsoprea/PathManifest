@@ -38,12 +38,14 @@ def _parse_args():
 
     parser.add_argument(
         '-e', '--exclude-rel-path',
+        metavar='REL-PATH',
         action='append',
         dest='excluded_rel_paths',
         help="Ignore the contents of this child path")
 
     parser.add_argument(
         '-i', '--include-rel-path',
+        metavar='REL-PATH',
         action='append',
         dest='included_rel_paths',
         help="Constraint the matched files to one or more directories")
