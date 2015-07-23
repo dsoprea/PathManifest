@@ -122,7 +122,7 @@ class Manifest(object):
 
         # Force it to "write-text" (it defaults to binary despite the 
         # documentation).
-        with bz2.open(manifest_filepath, 'rt') as f:
+        with bz2.BZ2File(manifest_filepath, 'r') as f:
             cr = csv.reader(f)
             for filepath, mtime_epoch_phrase in cr:
                 yield filepath, int(mtime_epoch_phrase)
@@ -137,7 +137,7 @@ class Manifest(object):
 
         # Force it to "write-text" (it defaults to binary despite the 
         # documentation).
-        with bz2.open(manifest_filepath, 'wt') as f:
+        with bz2.BZ2File(manifest_filepath, 'w') as f:
             cr = csv.writer(f)
             i = 0
             for filepath, mtime_epoch_phrase in self.file_gen():
