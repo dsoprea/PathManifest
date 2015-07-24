@@ -13,6 +13,7 @@ import argparse
 
 import pm.config.log
 import pm.manifest
+import pm.utility
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +47,11 @@ def _parse_args():
         dest='included_rel_paths',
         help="Constraint the matched files to one or more directories")
 
+    parser.add_argument(
+        '-j', '--json',
+        action='store_true',
+        help="Print result in JSON")
+
     args = parser.parse_args()
 
     return args
@@ -58,6 +64,7 @@ def _main():
     excluded_rel_paths = args.excluded_rel_paths or []
     included_rel_paths = args.included_rel_paths or []
     do_force = args.force
+    do_print_json = args.json
 
     m = pm.manifest.Manifest(
             root_path, 
@@ -65,7 +72,14 @@ def _main():
             excluded_rel_paths=excluded_rel_paths,
             included_rel_paths=included_rel_paths)
 
-    m.write_manifest(force=do_force)
+    manifest_filepath = m.write_manifest(force=do_force)
+
+    if do_print_json is True:
+        result = {
+            'manifest_filepath': manifest_filepath,
+        }
+
+        print(pm.utility.pretty_json_dumps(result))
 
 if __name__ == '__main__':
     pm.config.log.configure_log()

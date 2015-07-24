@@ -147,6 +147,8 @@ class Manifest(object):
 
         _LOGGER.debug("(%d) entries written.", i)
 
+        return manifest_filepath
+
     def build_manifest_set(self):
         catalog_s = set()
         
