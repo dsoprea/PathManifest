@@ -9,6 +9,7 @@ import datetime
 import pprint
 import bz2
 import fnmatch
+import hashlib
 
 import pm.config
 import pm.config.patch
@@ -326,6 +327,29 @@ class Manifest(object):
                                 "in debug-mode: [%s]", temp_path)
 
         return (patch_filepath, patch_info)
+
+    def __get_md5_for_rel_filepath(self, rel_filepath):
+        h = hashlib.md5()
+        chunk_size_b = 128
+        
+        filepath = os.path.join(self.__root_path, rel_filepath)
+        with open(filepath, 'rb') as f:
+            while 1:
+                chunk = f.read(chunk_size_b)
+                h.update(chunk)
+
+                if len(chunk) < chunk_size_b:
+                    break
+
+        return h.hexdigest()
+
+    def get_hashes_for_files_in_patch(self, patch_info):
+        hashes = {}
+        for rel_filepath in patch_info['files'].keys():
+            hash_ = self.__get_md5_for_rel_filepath(rel_filepath)
+            hashes[rel_filepath] = hash_
+
+        return hashes
 
     def get_applied_patches(self):
         patches = []
