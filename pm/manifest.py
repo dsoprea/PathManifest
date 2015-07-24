@@ -8,6 +8,7 @@ import subprocess
 import datetime
 import pprint
 import bz2
+import fnmatch
 
 import pm.config
 import pm.config.patch
@@ -221,7 +222,7 @@ class Manifest(object):
 
         return patch_files
 
-    def __write_patch_info(self, patch_name, patch_files, temp_path):
+    def __write_patch_info(self, patch_name, patch_files_info, temp_path):
         now_phrase = \
             datetime.datetime.now().strftime(
                 pm.config.patch.TIMESTAMP_FORMAT)
@@ -229,7 +230,7 @@ class Manifest(object):
         patch_info = {
             'patch_name': patch_name,
             'created_timestamp': now_phrase,
-            'files': patch_files,
+            'files': patch_files_info,
         }
 
         # Deposit a patch-info file.
@@ -247,7 +248,10 @@ class Manifest(object):
         with open(patch_info_filepath, 'w') as f:
             pm.utility.pretty_json_dump(patch_info, f)
 
-    def __build_archive(self, patch_name, patch_output_path, temp_path):
+        return (patch_info_filename, patch_info)
+
+    def __build_archive(self, patch_name, patch_output_path, temp_path, 
+                        rel_filepaths):
         # Build the archive.
 
         replacements = {
@@ -264,11 +268,17 @@ class Manifest(object):
         try:
             os.chdir(temp_path)
 
-            cmd = ['tar', 'cjf', patch_filepath, '.']
+            cmd = [
+                'tar', 
+                'cjf', patch_filepath, 
+                '-T', '-',
+            ]
+
             _LOGGER.debug("Building archive: [%s]", cmd)
 
-            p = subprocess.Popen(cmd)
-            if p.wait() != 0:
+            p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+            p.communicate('\n'.join(rel_filepaths))
+            if p.returncode != 0:
                 raise ValueError("Archive failed.")
         finally:
             os.chdir(current_wd)
@@ -291,14 +301,21 @@ class Manifest(object):
             _LOGGER.debug("Files to capture in the patch:\n%s", 
                           pprint.pformat(changed_rel_filepaths))
 
-        patch_files = \
+        patch_files_info = \
             self.__inject_files_to_staging(changed_rel_filepaths, temp_path)
 
-        self.__write_patch_info(patch_name, patch_files, temp_path)
+        (patch_info_filename, patch_info) = \
+            self.__write_patch_info(patch_name, patch_files_info, temp_path)
+
+        files_to_include = [patch_info_filename] + patch_files_info.keys()
 
         try:
             patch_filepath = \
-                self.__build_archive(patch_name, patch_output_path, temp_path)
+                self.__build_archive(
+                    patch_name, 
+                    patch_output_path, 
+                    temp_path, 
+                    files_to_include)
         finally:
             if pm.config.IS_DEBUG is False:
                 shutil.rmtree(temp_path)
@@ -306,4 +323,24 @@ class Manifest(object):
                 _LOGGER.warning("Not removing temp-path since we're running "
                                 "in debug-mode: [%s]", temp_path)
 
-        return patch_filepath
+        return (patch_filepath, patch_info)
+
+    def get_applied_patches(self):
+        patches = []
+        affected_rel_filepaths_s = set()
+        for filename in os.listdir(self.__root_path):
+            if fnmatch.fnmatch(
+                    filename, 
+                    pm.config.patch.PATCH_INFO_FILENAME_PATTERN) is False:
+                continue
+
+            filepath = os.path.join(self.__root_path, filename)
+
+            with open(filepath) as f:
+                patch_info = json.load(f)
+                patches.append(patch_info)
+
+                rel_filepaths = patch_info['files'].keys()
+                affected_rel_filepaths_s.update(set(rel_filepaths))
+
+        return (patches, list(affected_rel_filepaths_s))

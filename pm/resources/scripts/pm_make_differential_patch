@@ -85,7 +85,7 @@ def _main():
     result = None
 
     try:
-        patch_filepath = m.make_patch(patch_name, patch_output_path)
+        r = m.make_patch(patch_name, patch_output_path)
     except pm.manifest.NoChangedFilesException:
         if do_print_json is True:
             result = {
@@ -94,12 +94,24 @@ def _main():
         else:
             print("No files have been changed.")
     else:
+        (patch_filepath, patch_info) = r
+
         if do_print_json is True:
             result = {
                 'found_changes': True,
                 'patch_filepath': patch_filepath,
+                'patch_info': patch_info,
             }
         else:
+            print("Created/Updated Files")
+            print('---------------------')
+            print('')
+
+            for rel_filepath in patch_info['files'].keys():
+                print(rel_filepath)
+
+            print('')
+
             print("Patch file-path:")
             print('')
             print(patch_filepath)
