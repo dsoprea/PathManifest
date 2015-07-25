@@ -22,6 +22,10 @@ class NoChangedFilesException(Exception):
     pass
 
 
+class TooManyFilesException(Exception):
+    pass
+
+
 class Manifest(object):
     def __init__(self, root_path, manifest_filename=None, 
                  excluded_rel_paths=[], included_rel_paths=[]):
@@ -288,7 +292,7 @@ class Manifest(object):
 
         return patch_filepath
 
-    def make_patch(self, patch_name, patch_output_path):
+    def make_patch(self, patch_name, patch_output_path, max_files=None):
         temp_path = tempfile.mkdtemp()
         _LOGGER.debug("Path temporary path: [%s]", temp_path)
 
@@ -306,6 +310,15 @@ class Manifest(object):
 
         patch_files_info = \
             self.__inject_files_to_staging(changed_rel_filepaths, temp_path)
+
+        if max_files is not None:
+            len_ = len(patch_files_info)
+            if len_ > max_files:
+                raise TooManyFilesException("Too many files ({0}) are in the "
+                                            "patch. Either make sure you're "
+                                            "excluding/including correctly "
+                                            "or adjust the limit.".\
+                                            format(len_))
 
         (patch_info_filename, patch_info) = \
             self.__write_patch_info(patch_name, patch_files_info, temp_path)

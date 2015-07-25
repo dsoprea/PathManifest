@@ -55,6 +55,14 @@ def _parse_args():
         action='store_true',
         help="Print result in JSON")
 
+    parser.add_argument(
+        '-m', '--max-files',
+        type=int,
+        metavar='COUNT',
+        default=pm.config.patch.DEFAULT_MAXIMUM_ALLOWED_FILES_IN_PATCH,
+        help="A safe maximum for the number of allowed files in the patch "
+             "(0 for unlimited)")
+
     args = parser.parse_args()
 
     return args
@@ -69,6 +77,7 @@ def _main():
     patch_name = args.patch_name
     patch_output_path = args.output_path
     do_print_json = args.json
+    max_files = args.max_files or None
 
     if re.match(pm.config.patch.NAME_RX, patch_name) is None:
         print("The patch-name can only have numbers, letters, and "
@@ -85,7 +94,7 @@ def _main():
     result = None
 
     try:
-        r = m.make_patch(patch_name, patch_output_path)
+        r = m.make_patch(patch_name, patch_output_path, max_files=max_files)
     except pm.manifest.NoChangedFilesException:
         if do_print_json is True:
             result = {
