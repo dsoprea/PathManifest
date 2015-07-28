@@ -54,7 +54,7 @@ def _parse_args():
 
     parser.add_argument(
         '-ef', '--exclude-rel-filepath',
-        metavar='REL-PATH',
+        metavar='REL-FILEPATH',
         action='append',
         default=[],
         dest='excluded_rel_filepaths',
