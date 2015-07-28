@@ -28,7 +28,8 @@ class TooManyFilesException(Exception):
 
 class Manifest(object):
     def __init__(self, root_path, manifest_filename=None, 
-                 excluded_rel_paths=[], included_rel_paths=[]):
+                 excluded_rel_paths=[], included_rel_paths=[],
+                 excluded_rel_filepaths=[]):
         if os.path.exists(root_path) is False:
             raise ValueError("Root-path does not exist: [{0}]".\
                              format(root_rel_path))
@@ -38,6 +39,7 @@ class Manifest(object):
         self.__root_path = os.path.abspath(root_path)
         self.__manifest_filename = manifest_filename
         self.__excluded_rel_paths_s = set(excluded_rel_paths)
+        self.__excluded_rel_filepaths_s = set(excluded_rel_filepaths)
         self.__included_rel_paths = included_rel_paths
 
     def file_gen(self):
@@ -115,8 +117,13 @@ class Manifest(object):
                     rel_filepath = child_filepath[prefix_len:]
 
                     if rel_filepath == self.__manifest_filename:
-                        _LOGGER.debug("Excluding manifest from file-list: [{0}]".\
-                                      format(rel_filepath))
+                        _LOGGER.debug("Excluding manifest from file-list: [%s]",
+                                      rel_filepath)
+
+                        continue
+                    elif rel_filepath in self.__excluded_rel_filepaths_s:
+                        _LOGGER.debug("Skipping excluded filepath: [%s]", 
+                                      rel_filepath)
 
                         continue
 

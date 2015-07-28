@@ -40,6 +40,7 @@ def _parse_args():
         '-e', '--exclude-rel-path',
         metavar='REL-PATH',
         action='append',
+        default=[],
         dest='excluded_rel_paths',
         help="Ignore the contents of this child path")
 
@@ -47,8 +48,17 @@ def _parse_args():
         '-i', '--include-rel-path',
         metavar='REL-PATH',
         action='append',
+        default=[],
         dest='included_rel_paths',
         help="Constraint the matched files to one or more directories")
+
+    parser.add_argument(
+        '-ef', '--exclude-rel-filepath',
+        metavar='REL-PATH',
+        action='append',
+        default=[],
+        dest='excluded_rel_filepaths',
+        help="Ignore this filepath")
 
     parser.add_argument(
         '-j', '--json',
@@ -72,8 +82,9 @@ def _main():
 
     root_path = args.root_path
     manifest_filename = args.manifest_filename
-    excluded_rel_paths = args.excluded_rel_paths or []
-    included_rel_paths = args.included_rel_paths or []
+    excluded_rel_paths = args.excluded_rel_paths
+    included_rel_paths = args.included_rel_paths
+    excluded_rel_filepaths = args.excluded_rel_filepaths
     patch_name = args.patch_name
     patch_output_path = args.output_path
     do_print_json = args.json
@@ -89,6 +100,7 @@ def _main():
             root_path, 
             manifest_filename=manifest_filename, 
             excluded_rel_paths=excluded_rel_paths,
+            excluded_rel_filepaths=excluded_rel_filepaths,
             included_rel_paths=included_rel_paths)
 
     result = None
