@@ -32,7 +32,7 @@ class Manifest(object):
                  excluded_rel_filepaths=[]):
         if os.path.exists(root_path) is False:
             raise ValueError("Root-path does not exist: [{0}]".\
-                             format(root_rel_path))
+                             format(root_path))
 
         manifest_filename = pm.config.patch.DEFAULT_MANIFEST_FILENAME
 
