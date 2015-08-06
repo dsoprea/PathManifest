@@ -390,3 +390,51 @@ class Manifest(object):
                 affected_rel_filepaths_s.update(set(rel_filepaths))
 
         return (patches, list(affected_rel_filepaths_s))
+
+    def __get_rel_filepaths_in_tarbz2(self, filepath, pattern):
+        cmd = [
+            'tar', 
+            'tjf', filepath, 
+        ]
+
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        filelist_raw = p.stdout.read()
+        if p.wait() != 0:
+            raise ValueError("Could not read file: [{0}]".format(filepath))
+
+        for rel_filepath in filelist_raw.split('\n'):
+            filename = os.path.basename(rel_filepath)
+            if fnmatch.fnmatch(filename, pattern) is True:
+                yield rel_filepath
+
+    def __read_rel_filepath_from_tarbz2(self, filepath, entry_rel_filepath):
+        cmd = [
+            'tar', 
+            'xjOf', filepath, 
+            entry_rel_filepath,
+        ]
+
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        data = p.stdout.read()
+        if p.wait() != 0:
+            raise ValueError("Could not read entry [{0}] from tar.bz2: [{1}]".\
+                             format(rel_filepath, patch_filepath))
+
+        return data
+
+    def get_raw_patch_info_from_file(self, patch_filepath):
+        rel_filepaths = \
+            self.__get_rel_filepaths_in_tarbz2(patch_filepath, '.patch_info.*')
+
+        rel_filepaths = list(rel_filepaths)
+        assert \
+            len(rel_filepaths) == 1, \
+            "We needed to find exactly one patch-file: {0}".\
+            format(rel_filepaths)
+
+        rel_filepath = rel_filepaths[0]
+
+        patch_info = \
+            self.__read_rel_filepath_from_tarbz2(patch_filepath, rel_filepath)
+
+        return patch_info

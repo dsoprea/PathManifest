@@ -37,5 +37,6 @@ setuptools.setup(
           'pm/resources/scripts/pm_check_for_changes',
           'pm/resources/scripts/pm_make_differential_patch',
           'pm/resources/scripts/pm_show_applied_patches',
+          'pm/resources/scripts/pm_read_patch_info',
     ],
 )
