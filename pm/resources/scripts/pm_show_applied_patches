@@ -20,6 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 def _parse_args():
     description = "Show the patches that have been applied to the application."
     parser = argparse.ArgumentParser(description=description)
+
     parser.add_argument(
         'root_path',
         help='Root path')

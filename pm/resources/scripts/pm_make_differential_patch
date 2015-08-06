@@ -20,6 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 def _parse_args():
     description = "Create an archive with all differences since the manifest was written."
     parser = argparse.ArgumentParser(description=description)
+
     parser.add_argument(
         'root_path',
         help='Root path')

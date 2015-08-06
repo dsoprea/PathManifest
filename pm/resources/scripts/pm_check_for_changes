@@ -19,6 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 def _parse_args():
     description = "Check the given path for changes since the manifest was written."
     parser = argparse.ArgumentParser(description=description)
+
     parser.add_argument(
         'root_path',
         help='Root path')
