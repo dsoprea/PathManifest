@@ -89,8 +89,6 @@ class Manifest(object):
                             do_definite_include = True
                             break
 
-#                    print('')
-
                     # We were given a list of inclusions but the current 
                     # directory didn't qualify.
                     if do_definite_include is False:
@@ -111,6 +109,14 @@ class Manifest(object):
 
             if do_process_files is True:
                 for child_filename in child_filenames:
+                    # Skip anything that look like a patch-information file. 
+                    # This is important so that subsequent patches don't pick-
+                    # up the patch-file from earlier, applied patches.
+                    if fnmatch.fnmatch(
+                            child_filename, 
+                            pm.config.patch.PATCH_INFO_FILENAME_PATTERN) is True:
+                        continue
+
                     child_filepath = os.path.join(path, child_filename)
                     mtime_epoch = os.stat(child_filepath).st_mtime
 
@@ -424,7 +430,9 @@ class Manifest(object):
 
     def get_raw_patch_info_from_file(self, patch_filepath):
         rel_filepaths = \
-            self.__get_rel_filepaths_in_tarbz2(patch_filepath, '.patch_info.*')
+            self.__get_rel_filepaths_in_tarbz2(
+                patch_filepath, 
+                pm.config.patch.PATCH_INFO_FILENAME_PATTERN)
 
         rel_filepaths = list(rel_filepaths)
         assert \
