@@ -119,11 +119,6 @@ def _main():
         (patch_filepath, patch_info) = r
 
         if do_print_json is True:
-            hashes = m.get_hashes_for_files_in_patch(patch_info)
-
-            for rel_filepath, info in patch_info['files'].items():
-                info['hash_md5'] = hashes[rel_filepath]
-
             result = {
                 'found_changes': True,
                 'patch_filepath': patch_filepath,

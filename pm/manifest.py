@@ -235,9 +235,12 @@ class Manifest(object):
             # Set patch mtime.
             os.utime(to_filepath, (mtime_epoch, mtime_epoch))
 
+            hash_ = self.__get_md5_for_rel_filepath(rel_filepath)
+
             patch_files[rel_filepath] = {
                 'mtime_epoch': mtime_epoch,
                 'filesize_b': filesize_b,
+                'hash_md5': hash_,
             }
 
         return patch_files
