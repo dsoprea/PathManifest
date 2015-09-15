@@ -330,6 +330,11 @@ class Manifest(object):
         if max_files is not None:
             len_ = len(patch_files_info)
             if len_ > max_files:
+                rel_filepaths = sorted(patch_files_info.keys())
+                _LOGGER.error("Too many files will be included in the patch:\n"
+                              "%s", 
+                              pm.utility.pretty_json_dumps(rel_filepaths))
+
                 raise TooManyFilesException("Too many files ({0}) are in the "
                                             "patch. Either make sure you're "
                                             "excluding/including correctly "
