@@ -59,12 +59,17 @@ class Manifest(object):
                 child_dir_rel_path = child_dir_path[prefix_len:]
 
                 do_definite_include = False
-                do_skip = False
+                do_skip_path = False
                 if self.__included_rel_paths:
+                    _LOGGER.debug("We have one or more included-paths.")
+
+# TODO(dustin): We should support patterns (fnmatch).
                     for included_rel_path in self.__included_rel_paths:
                         # The current child path matches an included path 
                         # exactly.
-                        is_included = child_dir_rel_path == included_rel_path
+                        is_included = child_dir_rel_path.startswith(included_rel_path)
+                        if is_included is True:
+                            _LOGGER.debug("Including path: [%s]", included_rel_path)
 
                         # This current child path starts with an include path
                         # (include it).
@@ -92,16 +97,29 @@ class Manifest(object):
                     # We were given a list of inclusions but the current 
                     # directory didn't qualify.
                     if do_definite_include is False:
-                        do_skip = True
+                        do_skip_path = True
 
                 # We either weren't given inclusions or the current directory 
                 # matches an inclusion.
-                if do_skip is False:
-                    do_skip = child_dir_rel_path in self.__excluded_rel_paths_s
+                if do_skip_path is False:
+# TODO(dustin): We should support patterns (fnmatch).
+
+# TODO(dustin): We mind want to revert to using lists if we're no longer 
+#               benefiting from sets.
+                    for exclude_rel_path in list(self.__excluded_rel_paths_s):
+                        do_skip_path = child_dir_rel_path.startswith(exclude_rel_path)
+                        if do_skip_path is True:
+                            break
+
+                    if do_skip_path is True:
+                        _LOGGER.debug("Excluding path: [%s]", 
+                                      child_dir_rel_path)
+
+                        break
 
                 # The current directory failed either the inclusions or the 
                 # exclusions.
-                if do_skip is True:
+                if do_skip_path is True:
                     skip_children.append(child_dir)
 
             for skip_child in skip_children:
@@ -127,11 +145,21 @@ class Manifest(object):
                                       rel_filepath)
 
                         continue
-                    elif rel_filepath in self.__excluded_rel_filepaths_s:
-                        _LOGGER.debug("Skipping excluded filepath: [%s]", 
-                                      rel_filepath)
+# TODO(dustin): We should support patterns (fnmatch).
+                    else:
+# TODO(dustin): We mind want to revert to using lists if we're no longer 
+#               benefiting from sets.
+                        do_skip_file = False
+                        for excluded_rel_filepath in list(self.__excluded_rel_filepaths_s):
+                            do_skip_file = rel_filepath.startswith(excluded_rel_filepath)
+                            if do_skip_file is True:
+                                break
 
-                        continue
+                        if do_skip_file is True:
+                            _LOGGER.debug("Skipping excluded filepath: [%s]", 
+                                          rel_filepath)
+
+                            continue
 
                     yield (rel_filepath, int(mtime_epoch))
 
@@ -315,7 +343,7 @@ class Manifest(object):
         result = self.compare()
         (created, updated, removed) = result
 
-        changed_rel_filepaths = list(created.keys()) + list(updated.keys())
+        changed_rel_filepaths = sorted(list(created.keys()) + list(updated.keys()))
 
         if not changed_rel_filepaths:
             raise NoChangedFilesException()
