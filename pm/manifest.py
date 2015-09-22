@@ -109,13 +109,10 @@ class Manifest(object):
                     for exclude_rel_path in list(self.__excluded_rel_paths_s):
                         do_skip_path = child_dir_rel_path.startswith(exclude_rel_path)
                         if do_skip_path is True:
+                            _LOGGER.debug("Excluding path: [%s]", 
+                                          child_dir_rel_path)
+
                             break
-
-                    if do_skip_path is True:
-                        _LOGGER.debug("Excluding path: [%s]", 
-                                      child_dir_rel_path)
-
-                        break
 
                 # The current directory failed either the inclusions or the 
                 # exclusions.
